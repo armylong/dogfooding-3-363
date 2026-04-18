@@ -16,4 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
             game.restart();
         }
     });
+
+    window.addEventListener('resize', () => {
+        game.resize();
+    });
 });

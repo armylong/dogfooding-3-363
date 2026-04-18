@@ -1,6 +1,8 @@
 export const CELL_SIZE = 60;
 export const COLS = 9;
 export const ROWS = 10;
+export const PADDING = 35;
+export const STATUS_HEIGHT = 60;
 
 export const COLORS = {
     BOARD: '#f0d9b5',
