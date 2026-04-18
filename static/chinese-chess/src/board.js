@@ -48,6 +48,68 @@ export class Board {
         this.grid[fromRow][fromCol] = null;
     }
 
+    /**
+     * 检查将帅是否见面（在同一列且中间无棋子）
+     * @returns {boolean} 如果将帅见面返回true
+     */
+    checkKingsFacing() {
+        let redKingPos = null;
+        let blackKingPos = null;
+
+        // 查找双方老将位置
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+                const piece = this.grid[row][col];
+                if (piece && piece.type === PIECES.KING) {
+                    if (piece.side === SIDES.RED) {
+                        redKingPos = { row, col };
+                    } else {
+                        blackKingPos = { row, col };
+                    }
+                }
+            }
+        }
+
+        // 如果找不到老将，返回false
+        if (!redKingPos || !blackKingPos) {
+            return false;
+        }
+
+        // 检查是否在同一列
+        if (redKingPos.col !== blackKingPos.col) {
+            return false;
+        }
+
+        // 检查中间是否有棋子
+        const minRow = Math.min(redKingPos.row, blackKingPos.row);
+        const maxRow = Math.max(redKingPos.row, blackKingPos.row);
+
+        for (let row = minRow + 1; row < maxRow; row++) {
+            if (this.grid[row][redKingPos.col] !== null) {
+                return false; // 中间有棋子阻挡
+            }
+        }
+
+        return true; // 将帅见面
+    }
+
+    /**
+     * 查找指定方的老将位置
+     * @param {string} side - 方色（red/black）
+     * @returns {Object|null} 老将位置 {row, col} 或 null
+     */
+    findKing(side) {
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+                const piece = this.grid[row][col];
+                if (piece && piece.type === PIECES.KING && piece.side === side) {
+                    return { row, col };
+                }
+            }
+        }
+        return null;
+    }
+
     getValidMoves(row, col, piece) {
         const moves = [];
         
@@ -141,15 +203,16 @@ export class Board {
     }
 
     _getKnightMoves(row, col, piece, moves) {
+        // 马的8种走法（日字形）：横向2格纵向1格 或 横向1格纵向2格
         const jumps = [
-            { dr: -2, dc: -1, br: -1, bc: 0 },
-            { dr: -2, dc: 1, br: -1, bc: 0 },
-            { dr: 2, dc: -1, br: 1, bc: 0 },
-            { dr: 2, dc: 1, br: 1, bc: 0 },
-            { dr: -1, dc: -2, br: 0, bc: -1 },
-            { dr: -1, dc: 2, br: 0, bc: 1 },
-            { dr: 1, dc: -2, br: 0, bc: -1 },
-            { dr: 1, dc: 2, br: 0, bc: 1 }
+            { dr: -2, dc: -1, br: -1, bc: 0 },  // 上左上
+            { dr: -2, dc: 1, br: -1, bc: 0 },   // 上右上
+            { dr: 2, dc: -1, br: 1, bc: 0 },    // 下左下
+            { dr: 2, dc: 1, br: 1, bc: 0 },     // 下右下
+            { dr: -1, dc: -2, br: 0, bc: -1 },  // 左上左
+            { dr: -1, dc: 2, br: 0, bc: 1 },    // 右上右
+            { dr: 1, dc: -2, br: 0, bc: -1 },   // 左下左
+            { dr: 1, dc: 2, br: 0, bc: 1 }      // 右下右
         ];
 
         for (const jump of jumps) {
@@ -158,10 +221,24 @@ export class Board {
             const blockRow = row + jump.br;
             const blockCol = col + jump.bc;
 
-            if (this._isValidPosition(newRow, newCol)) {
-                if (!this.get(blockRow, blockCol) && this._canMoveTo(newRow, newCol, piece.side)) {
-                    moves.push({ row: newRow, col: newCol });
-                }
+            // 检查目标位置是否有效
+            if (!this._isValidPosition(newRow, newCol)) {
+                continue;
+            }
+
+            // 检查马脚（绊马腿）位置是否有效且没有棋子
+            if (!this._isValidPosition(blockRow, blockCol)) {
+                continue;
+            }
+
+            // 检查马脚是否有棋子阻挡
+            if (this.get(blockRow, blockCol)) {
+                continue;
+            }
+
+            // 检查目标位置是否可以移动（空位或敌方棋子）
+            if (this._canMoveTo(newRow, newCol, piece.side)) {
+                moves.push({ row: newRow, col: newCol });
             }
         }
     }
