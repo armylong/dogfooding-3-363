@@ -1,4 +1,5 @@
 export const CELL_SIZE = 60;
+export const BOARD_PADDING = 50;
 export const COLS = 9;
 export const ROWS = 10;
 
